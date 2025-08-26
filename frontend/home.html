@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Welcome to VitalLens</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- Body & Background --- */
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: #0F172A;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+            background-size: 20px 20px;
+            color: #cbd5e1; /* slate-200 */
+            margin: 0;
+        }
+
+        /* --- Container --- */
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            text-align: center;
+            padding: 16px;
+        }
+
+        /* --- Main Title --- */
+        h1 {
+            font-size: 4rem; /* 6xl */
+            font-weight: 700;
+            font-style: italic;
+            color: white;
+            margin: 0;
+            animation: pulse 2s infinite;
+        }
+
+        @media(min-width: 768px) {
+            h1 {
+                font-size: 6rem; /* md:text-8xl */
+            }
+        }
+
+        p {
+            color: #94a3b8; /* slate-400 */
+            margin-top: 16px;
+            font-size: 1.125rem; /* text-lg */
+        }
+
+        @media(min-width: 768px) {
+            p {
+                font-size: 1.25rem; /* md:text-xl */
+            }
+        }
+
+        /* --- Footer / Buttons --- */
+        footer {
+            width: 100%;
+            max-width: 400px; /* max-w-sm */
+            padding-bottom: 32px;
+            margin-top: 32px;
+        }
+
+        .button-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        @media(min-width: 640px) {
+            .button-grid {
+                flex-direction: row;
+            }
+        }
+
+        .btn {
+            flex: 1;
+            text-decoration: none;
+            font-weight: 700;
+            padding: 12px;
+            border-radius: 0.5rem;
+            color: white;
+            display: inline-block;
+            text-align: center;
+            transition: background-color 0.3s ease;
+        }
+
+        .btn-login {
+            background-color: #8b5cf6; /* violet-600 */
+        }
+        .btn-login:hover {
+            background-color: #a78bfa; /* violet-500 */
+        }
+
+        .btn-signup {
+            background-color: #374151; /* slate-700 */
+        }
+        .btn-signup:hover {
+            background-color: #4b5563; /* slate-600 */
+        }
+
+        /* --- Pulse Animation --- */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <!-- Main Title -->
+        <main>
+            <h1>VitalLens</h1>
+            <p>Your personal health, monitored intelligently.</p>
+        </main>
+
+        <!-- Action Buttons -->
+        <footer>
+            <div class="button-grid">
+                <a href="login.html" class="btn btn-login">Login</a>
+                <a href="signup.html" class="btn btn-signup">Sign Up</a>
+            </div>
+        </footer>
+    </div>
+
+</body>
+</html>

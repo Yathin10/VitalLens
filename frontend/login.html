@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - VitalLens</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* --- Body and Background --- */
+        body { 
+            font-family: 'Poppins', sans-serif; 
+            background-color: #0F172A;
+            background-image: radial-gradient(circle at 1px 1px, rgba(255,255,255,0.05) 1px, transparent 0);
+            background-size: 20px 20px;
+            color: #cbd5e1; /* slate-200 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* --- Card Container --- */
+        .card {
+            width: 100%;
+            max-width: 360px;
+            background-color: rgba(71, 85, 105, 0.5); /* slate-800/50 */
+            border: 1px solid #374151; /* slate-700 */
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px rgba(15, 23, 42, 0.7); /* shadow-2xl */
+        }
+
+        /* --- Header --- */
+        .card h1 {
+            font-size: 1.875rem; /* text-3xl */
+            font-weight: 700;
+            font-style: italic;
+            color: white;
+            margin-bottom: 8px;
+        }
+
+        .card p {
+            color: #94a3b8; /* slate-400 */
+            margin-top: 8px;
+            margin-bottom: 0;
+        }
+
+        /* --- Form Elements --- */
+        label {
+            display: block;
+            color: #e2e8f0; /* slate-300 */
+            font-weight: 500;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+        }
+
+        input[type="email"],
+        input[type="password"] {
+            width: 100%;
+            background-color: rgba(71, 85, 105, 0.5); /* slate-700/50 */
+            border: 1px solid #4b5563; /* slate-600 */
+            border-radius: 0.5rem;
+            padding: 8px 16px;
+            font-size: 1rem;
+            outline: none;
+            transition: box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #8b5cf6; /* violet-500 */
+            box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.5);
+        }
+
+        /* --- Button --- */
+        button {
+            width: 100%;
+            background-color: #8b5cf6; /* violet-600 */
+            color: white;
+            font-weight: 700;
+            padding: 12px;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #a78bfa; /* violet-500 */
+        }
+
+        /* --- Error Message --- */
+        #error-message {
+            text-align: center;
+            margin-top: 16px;
+            color: #f87171; /* red-400 */
+            min-height: 24px;
+        }
+
+        /* --- Sign up link --- */
+        .signup-text {
+            text-align: center;
+            margin-top: 16px;
+            font-size: 0.875rem;
+            color: #94a3b8; /* slate-400 */
+        }
+
+        .signup-text a {
+            font-weight: 500;
+            color: #a78bfa; /* violet-400 */
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .signup-text a:hover {
+            color: #c4b5fd; /* violet-300 */
+        }
+
+        /* --- Margins --- */
+        .mb-4 { margin-bottom: 16px; }
+        .mb-6 { margin-bottom: 24px; }
+        .mb-8 { margin-bottom: 32px; }
+        .mt-2 { margin-top: 8px; }
+        .mt-4 { margin-top: 16px; }
+    </style>
+</head>
+<body>
+
+    <div class="card">
+        <div class="text-center mb-8">
+            <h1>VitalLens</h1>
+            <p>Sign in to monitor your health</p>
+        </div>
+        
+        <form id="login-form">
+            <div class="mb-4">
+                <label for="email">Email</label>
+                <input type="email" id="email" required>
+            </div>
+            <div class="mb-6">
+                <label for="password">Password</label>
+                <input type="password" id="password" required>
+            </div>
+            <div>
+                <button type="submit">Sign In</button>
+            </div>
+            <p id="error-message"></p>
+        </form>
+
+        <div class="signup-text">
+            <p>Don't have an account? <a href="signup.html">Sign Up</a></p>
+        </div>
+    </div>
+
+    <script src="login.js"></script>
+</body>
+</html>

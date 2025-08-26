@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>VitalLens - Health Monitoring</title>
+  <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  
+  <style>
+    /* Global */
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #0f172a, #1e1b4b, #312e81);
+      color: #e2e8f0;
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    h2 {
+      margin: 0 0 1rem 0;
+      font-weight: 600;
+    }
+
+    /* Header */
+    header {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+    }
+    header span {
+      font-size: 1.8rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+      color: #a78bfa;
+    }
+
+    /* Layout */
+    main {
+      flex-grow: 1;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 2rem;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      max-width: 1200px;
+      width: 100%;
+    }
+    @media (min-width: 1024px) {
+      .grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* Card */
+    .card {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 1.25rem;
+      padding: 1.8rem;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+      backdrop-filter: blur(12px);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 12px 36px rgba(0,0,0,0.7);
+    }
+    .card-title-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+    .card h2 {
+      color: #c4b5fd;
+      text-align: center;
+    }
+
+    /* Camera */
+    .video-container {
+      position: relative;
+      background: #0f172a;
+      border: 2px solid #4c1d95;
+      border-radius: 1rem;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      box-shadow: inset 0 0 12px rgba(167,139,250,0.3);
+    }
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    #face-detection-status {
+      position: absolute;
+      top: 0.75rem;
+      right: 0.75rem;
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      color: white;
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.4rem 0.9rem;
+      border-radius: 9999px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    }
+
+    /* Button */
+    button {
+      width: 100%;
+      background: linear-gradient(135deg, #7c3aed, #8b5cf6);
+      color: white;
+      font-weight: bold;
+      padding: 0.9rem;
+      border: none;
+      border-radius: 0.75rem;
+      margin-top: 1rem;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(124,58,237,0.4);
+      transition: all 0.3s ease;
+    }
+    button:hover {
+      background: linear-gradient(135deg, #8b5cf6, #a78bfa);
+      box-shadow: 0 8px 24px rgba(139,92,246,0.6);
+      transform: translateY(-2px);
+    }
+    button:disabled {
+      background: #475569;
+      color: #94a3b8;
+      cursor: not-allowed;
+      box-shadow: none;
+    }
+
+    /* Results */
+    #results-placeholder {
+      color: #94a3b8;
+      text-align: center;
+    }
+    .loader {
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top: 4px solid #a78bfa;
+      border-radius: 50%;
+      width: 52px;
+      height: 52px;
+      margin-bottom: 1rem;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    #processing-loader {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+    .result-box {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: rgba(124,58,237,0.15);
+      border: 1px solid #8b5cf6;
+      color: #e9d5ff;
+      padding: 1rem;
+      border-radius: 0.85rem;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+      opacity: 0;
+      transform: translateY(10px);
+      animation: fadeIn 0.6s forwards;
+      font-size: 1rem;
+    }
+    .result-box i {
+      font-size: 1.3rem;
+      color: #c084fc;
+    }
+    @keyframes fadeIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* PDF Export Styles */
+    .pdf-export-mode h2 {
+      color: #000000 !important;
+    }
+    .pdf-export-mode .result-box {
+        background: #ffffff !important;
+        border: 1px solid #e5e7eb !important;
+        animation: none !important;
+        opacity: 1 !important;
+        transform: none !important;
+    }
+    .pdf-export-mode .result-box * {
+        color: #000000 !important;
+    }
+
+    /* --- [MODIFIED] STEP 1: ADDED STYLES FOR THE "IMPORTANCE" BUTTON & MODAL --- */
+    #importance-btn {
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      background: rgba(167, 139, 250, 0.2);
+      color: #c4b5fd;
+      padding: 4px 10px;
+      font-size: 12px;
+      font-weight: 500;
+      border: 1px solid rgba(167, 139, 250, 0.4);
+      border-radius: 20px;
+      cursor: pointer;
+      width: auto;
+      margin-top: 0;
+      transition: background 0.2s;
+    }
+    #importance-btn:hover {
+      background: rgba(167, 139, 250, 0.4);
+    }
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      z-index: 100;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.7);
+      backdrop-filter: blur(5px);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background-color: #1e293b;
+      color: #e2e8f0;
+      margin: auto;
+      padding: 25px 30px;
+      border: 1px solid #4f46e5;
+      border-radius: 1rem;
+      width: 90%;
+      max-width: 650px;
+      max-height: 85vh;
+      overflow-y: auto;
+      position: relative;
+    }
+    .modal-content h3 {
+      color: #a78bfa;
+      margin-top: 1.2rem;
+      margin-bottom: 0.5rem;
+    }
+    .modal-content hr {
+      border: none;
+      height: 1px;
+      background-color: rgba(255, 255, 255, 0.1);
+      margin: 1.5rem 0;
+    }
+    .close-btn {
+      color: #aaa;
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .close-btn:hover,
+    .close-btn:focus {
+      color: #fff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header>
+      <span>VitalLens</span>
+    </header>
+
+    <main>
+      <div class="grid">
+        
+        <div class="card">
+          <h2>Health Monitor</h2>
+          <div class="video-container">
+            <video id="video" playsinline autoplay muted></video>
+            <div id="face-detection-status">No Face Detected</div>
+          </div>
+          <button id="start-monitoring-btn">Start Monitoring</button>
+          <p id="status-text" style="text-align:center; margin-top:1rem; color:#94a3b8; min-height:1.5rem;"></p>
+        </div>
+
+        <div class="card">
+          <div id="report-content">
+            <div class="card-title-container">
+              <h2>Your Results</h2>
+              <button id="importance-btn">Importance</button>
+            </div>
+            <div class="flex-col" style="display:flex; flex-direction:column; gap:1rem;">
+              <div id="results-placeholder"><p>Measurements will appear here.</p></div>
+              <div id="processing-loader">
+                <div class="loader"></div>
+                <p style="color:#cbd5e1;">Analyzing signal...</p>
+              </div>
+              <div id="results-container" style="display:flex; flex-direction:column; gap:0.85rem;"></div>
+            </div>
+          </div>
+          <button id="download-report-btn" style="display: none;">Download Report</button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div id="info-modal-overlay" class="modal-overlay">
+    <div class="modal-content">
+      <span id="close-modal-btn" class="close-btn">&times;</span>
+      <h3>🩸 Blood Pressure (BP)</h3>
+      <p>Blood pressure is the force of circulating blood on the walls of arteries. It is measured in mmHg and has two key values:</p>
+      <ul>
+        <li><b>Systolic Pressure (upper value):</b> The pressure when the heart contracts and pumps blood into the arteries. It reflects how strongly the heart is working.</li>
+        <li><b>Diastolic Pressure (lower value):</b> The pressure when the heart relaxes between beats. It shows the baseline resistance in the arteries.</li>
+      </ul>
+      <p>👉 <b>Why Important?</b><br>
+      Normal BP is around 120/80 mmHg. High BP (Hypertension) can damage arteries, increasing risk of heart attack, stroke, and kidney disease. Low BP (Hypotension) can cause dizziness, fainting, and inadequate blood supply to organs.</p>
+      <hr>
+      <h3>❤️ Heart Rate (HR)</h3>
+      <p>Heart rate is the number of times the heart beats per minute (bpm). It reflects how hard the heart is working to pump blood through the body.</p>
+      <ul>
+        <li><b>Normal Resting HR:</b> 60–100 bpm for adults.</li>
+        <li><b>Athletes:</b> Often have a lower HR (&lt;60 bpm) because of stronger heart function.</li>
+      </ul>
+      <p>👉 <b>Why Important?</b><br>
+      Heart rate is a direct indicator of cardiovascular health. Continuous abnormal HR may signal underlying issues like arrhythmia, thyroid imbalance, or heart disease.</p>
+      <hr>
+      <h3>😟 Stress Level</h3>
+      <p>Stress is the body’s physical and mental response to demands or challenges. It triggers the release of hormones like adrenaline and cortisol, which affect heart and blood pressure.</p>
+      <p>Physiological Signs of Stress include increased heart rate, elevated blood pressure, and reduced Heart Rate Variability (HRV).</p>
+      <ul>
+        <li><b>Short-Term Stress:</b> Can improve alertness and energy (fight-or-flight response).</li>
+        <li><b>Chronic Stress:</b> Over time, it contributes to hypertension, heart disease, diabetes, obesity, and mental health issues.</li>
+      </ul>
+      <p>👉 <b>Why Important?</b><br>
+      Monitoring stress helps prevent long-term health risks and improves overall well-being. Techniques like relaxation, exercise, meditation, and sleep help manage stress effectively.</p>
+    </div>
+  </div>
+  
+  <script src="script.js" defer></script>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        // --- PDF Generation Logic ---
+        const downloadButton = document.getElementById('download-report-btn');
+        downloadButton.addEventListener('click', () => {
+            const reportElement = document.getElementById('report-content');
+            reportElement.classList.add('pdf-export-mode');
+            const today = new Date();
+            const dateString = today.getFullYear() + '-' + String(today.getMonth() + 1).padStart(2, '0') + '-' + String(today.getDate()).padStart(2, '0');
+            const options = {
+                margin:       15,
+                filename:     `VitalLens_Report_${dateString}.pdf`,
+                image:        { type: 'jpeg', quality: 0.98 },
+                html2canvas:  { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+                jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+            html2pdf().from(reportElement).set(options).save();
+            setTimeout(() => {
+                reportElement.classList.remove('pdf-export-mode');
+            }, 500);
+        });
+
+        /* --- [MODIFIED] STEP 4: ADDED JAVASCRIPT FOR MODAL FUNCTIONALITY --- */
+        const importanceBtn = document.getElementById('importance-btn');
+        const modalOverlay = document.getElementById('info-modal-overlay');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+
+        // Function to show the modal
+        importanceBtn.addEventListener('click', () => {
+          modalOverlay.style.display = 'flex';
+        });
+
+        // Function to hide the modal
+        const closeModal = () => {
+          modalOverlay.style.display = 'none';
+        }
+
+        closeModalBtn.addEventListener('click', closeModal);
+
+        // Also close modal if user clicks on the overlay background
+        modalOverlay.addEventListener('click', (e) => {
+          if (e.target === modalOverlay) {
+            closeModal();
+          }
+        });
+    });
+  </script>
+</body>
+</html>
