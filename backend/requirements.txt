@@ -1,6 +1,0 @@
-requirements.txt
-These are the Python libraries needed for the backend.
-Install them using: pip install -r requirements.txt
-Flask
-Flask-CORS
-gunicorn==22.0.0
