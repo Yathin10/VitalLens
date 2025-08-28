@@ -1,11 +1,11 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import random
 import csv
 import os
 import joblib
 import numpy as np
-import pandas as pd  # Added for proper feature names
+import pandas as pd  # For correct DataFrame handling
 
 # --- App & DB Setup ---
 app = Flask(__name__)
@@ -25,21 +25,28 @@ def initialize_database():
 
 initialize_database()
 
-# --- 1. LOAD THE TRAINED MODELS ON STARTUP ---
+# --- Load ML Models ---
 try:
     bp_model = joblib.load(os.path.join(MODELS_DIR, 'bp_model.pkl'))
     hr_model = joblib.load(os.path.join(MODELS_DIR, 'hr_model.pkl'))
     stress_model = joblib.load(os.path.join(MODELS_DIR, 'stress_model.pkl'))
     print("--- All ML models loaded successfully ---")
-    print(f"BP model type: {type(bp_model).__name__}")
-    print(f"HR model type: {type(hr_model).__name__}")
-    print(f"Stress model type: {type(stress_model).__name__}")
 except FileNotFoundError:
-    print("--- WARNING: Model files not found. The '/process' endpoint will not work. ---")
-    print("--- Please run train_model.py to create the models. ---")
+    print("--- WARNING: Model files not found. /process endpoint will not work ---")
     bp_model = hr_model = stress_model = None
 
-# --- User Authentication Endpoints ---
+# --- Home Route ---
+@app.route('/')
+def home():
+    return jsonify({'message': 'Welcome to the VitalLens API!'}), 200
+
+# --- Favicon handler ---
+@app.route('/favicon.ico')
+def favicon():
+    return send_from_directory(os.path.join(SCRIPT_DIR, 'static'),
+                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+# --- User Authentication ---
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
@@ -76,40 +83,25 @@ def login():
     
     return jsonify({'status': 'error', 'message': 'Invalid email or password'}), 401
 
-# --- 2. UPDATED DATA PROCESSING ENDPOINT ---
+# --- ML Prediction Endpoint ---
 @app.route('/process', methods=['POST'])
 def process_data():
-    """
-    Endpoint uses the loaded ML models to make predictions.
-    Handles different model types and ensures correct input/output shapes.
-    """
     if not all([bp_model, hr_model, stress_model]):
         return jsonify({'status': 'error', 'message': 'Models are not loaded on the server.'}), 500
 
-    print("Backend: Received request on /process endpoint.")
-    
-    # --- SIMULATE LIVE DATA PROCESSING ---
     simulated_calculated_hr = random.uniform(60.0, 100.0)
-    print(f"Simulated feature (calculated HR): {simulated_calculated_hr:.2f} bpm")
-    
-    # --- FIX: Pass DataFrame with correct feature name used in training ---
     input_df = pd.DataFrame([[simulated_calculated_hr]], columns=['calculated_hr'])
 
-    # --- PREDICT WITH LOADED MODELS ---
-    # BP Prediction
     bp_pred = bp_model.predict(input_df)
     if bp_pred.ndim == 1:
         bp_pred = bp_pred.reshape(1, -1)
 
-    # HR Prediction
     hr_pred = hr_model.predict(input_df)
     if hr_pred.ndim == 1:
         hr_pred = hr_pred.reshape(1, -1)
 
-    # Stress Prediction
     stress_pred = stress_model.predict(input_df)
 
-    # --- FORMAT RESULTS ---
     results = {
         "systolic": int(bp_pred[0][0]),
         "diastolic": int(bp_pred[0][1]),
@@ -117,7 +109,6 @@ def process_data():
         "stress": stress_pred[0]
     }
 
-    print(f"Model Predictions: {results}")
     return jsonify(results)
 
 if __name__ == '__main__':
