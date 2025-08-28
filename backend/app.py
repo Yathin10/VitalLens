@@ -5,16 +5,15 @@ import csv
 import os
 import joblib
 import numpy as np
-import pandas as pd  # For correct DataFrame handling
+import pandas as pd
 
 # --- App & DB Setup ---
-app = Flask(__name__)
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+app = Flask(__name__, static_folder=SCRIPT_DIR, static_url_path='')
 CORS(app)
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 CSV_FILE = os.path.join(SCRIPT_DIR, 'users.csv')
 CSV_HEADERS = ['name', 'phone', 'email', 'gender', 'password']
-MODELS_DIR = os.path.join(SCRIPT_DIR, 'models')
 
 def initialize_database():
     if not os.path.exists(CSV_FILE):
@@ -26,48 +25,60 @@ def initialize_database():
 initialize_database()
 
 # --- Load ML Models ---
+bp_model = None
+hr_model = None
+stress_model = None
 try:
-    bp_model = joblib.load(os.path.join(MODELS_DIR, 'bp_model.pkl'))
-    hr_model = joblib.load(os.path.join(MODELS_DIR, 'hr_model.pkl'))
-    stress_model = joblib.load(os.path.join(MODELS_DIR, 'stress_model.pkl'))
+    MODELS_DIR = os.path.join(SCRIPT_DIR, 'models')
+    bp_model_path = os.path.join(MODELS_DIR, 'bp_model.pkl')
+    hr_model_path = os.path.join(MODELS_DIR, 'hr_model.pkl')
+    stress_model_path = os.path.join(MODELS_DIR, 'stress_model.pkl')
+
+    bp_model = joblib.load(bp_model_path)
+    hr_model = joblib.load(hr_model_path)
+    stress_model = joblib.load(stress_model_path)
     print("--- All ML models loaded successfully ---")
-except FileNotFoundError:
-    print("--- WARNING: Model files not found. /process endpoint will not work ---")
-    bp_model = hr_model = stress_model = None
+except FileNotFoundError as e:
+    print(f"Error loading models: {e}.")
+    print("Please ensure your .pkl files are inside a 'models' folder in your GitHub repository.")
+    print("Files found in root directory:", os.listdir(SCRIPT_DIR))
+    if os.path.exists(MODELS_DIR):
+        print("Files found in 'models' directory:", os.listdir(MODELS_DIR))
+except Exception as e:
+    print(f"An unexpected error occurred while loading models: {e}")
 
-# --- Home Route ---
+
+# --- Static File Serving ---
 @app.route('/')
-def home():
-    return jsonify({'message': 'Welcome to the VitalLens API!'}), 200
+def serve_home():
+    return send_from_directory(SCRIPT_DIR, 'home.html')
 
-# --- Favicon handler ---
-@app.route('/favicon.ico')
-def favicon():
-    return send_from_directory(os.path.join(SCRIPT_DIR, 'static'),
-                               'favicon.ico', mimetype='image/vnd.microsoft.icon')
+@app.route('/login.html')
+def serve_login():
+    return send_from_directory(SCRIPT_DIR, 'login.html')
 
-# --- User Authentication ---
+@app.route('/signup.html')
+def serve_signup():
+    return send_from_directory(SCRIPT_DIR, 'signup.html')
+
+@app.route('/index.html')
+def serve_index():
+    return send_from_directory(SCRIPT_DIR, 'index.html')
+
+
+# --- User Authentication Endpoints ---
 @app.route('/signup', methods=['POST'])
 def signup():
     data = request.get_json()
-    email = data.get('email')
-    
-    with open(CSV_FILE, mode='r', newline='') as f:
-        reader = csv.DictReader(f)
-        for row in reader:
-            if row['email'] == email:
-                return jsonify({'status': 'error', 'message': 'This email is already registered'}), 409
+    if not all(key in data for key in CSV_HEADERS):
+        return jsonify({'status': 'error', 'message': 'Missing required fields'}), 400
 
     with open(CSV_FILE, mode='a', newline='') as f:
         writer = csv.DictWriter(f, fieldnames=CSV_HEADERS)
-        new_user = {
-            'name': data.get('name'), 'phone': data.get('phone'),
-            'email': email, 'gender': data.get('gender'),
-            'password': data.get('password')
-        }
-        writer.writerow(new_user)
-    
-    return jsonify({'status': 'success', 'message': 'Account created successfully!'})
+        writer.writerow(data)
+
+    return jsonify({'status': 'success', 'message': 'User registered successfully'})
+
 
 @app.route('/login', methods=['POST'])
 def login():
@@ -80,8 +91,9 @@ def login():
         for user in reader:
             if user['email'] == email and user['password'] == password:
                 return jsonify({'status': 'success', 'message': 'Login successful'})
-    
+
     return jsonify({'status': 'error', 'message': 'Invalid email or password'}), 401
+
 
 # --- ML Prediction Endpoint ---
 @app.route('/process', methods=['POST'])
@@ -96,20 +108,24 @@ def process_data():
     if bp_pred.ndim == 1:
         bp_pred = bp_pred.reshape(1, -1)
 
+    # hr_pred is a NumPy array like [85.3]
     hr_pred = hr_model.predict(input_df)
-    if hr_pred.ndim == 1:
-        hr_pred = hr_pred.reshape(1, -1)
 
+    # stress_pred is a NumPy array like ['Moderate']
     stress_pred = stress_model.predict(input_df)
 
+    # UPDATED: Convert the NumPy number to a standard Python float before rounding.
     results = {
-        "systolic": int(bp_pred[0][0]),
-        "diastolic": int(bp_pred[0][1]),
-        "heartRate": int(hr_pred[0][0]),
-        "stress": stress_pred[0]
+        'status': 'success',
+        'systolic': round(bp_pred[0, 0]),
+        'diastolic': round(bp_pred[0, 1]),
+        'heartRate': round(float(hr_pred[0])),
+        'stress': stress_pred[0]
     }
 
     return jsonify(results)
 
+# --- Main Execution ---
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
